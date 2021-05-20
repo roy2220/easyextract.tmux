@@ -88,7 +88,7 @@ WORD=$(FZF_DEFAULT_OPTS={fzf_default_opts} FZF_DEFAULT_COMMAND={fzf_default_comm
 if [[ -z ${{WORD}} ]]; then
     exit
 fi
-tmux send-keys -t {pane_id} -l "${{WORD}}"
+tmux send-keys -t {pane_id} -l -- "${{WORD}}"
 """.format(
         fzf_default_opts=shlex.quote(fzf_default_opts),
         fzf_default_command=shlex.quote(fzf_default_command),
