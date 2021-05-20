@@ -22,7 +22,7 @@ def parse_args() -> None:
     args = arg_parser.parse_args(sys.argv[1:], namespace=Args())
 
     global DELIMITERS, HEIGHT
-    DELIMITERS = args.delimiters or "- . @ : / ,"
+    DELIMITERS = args.delimiters or "- . @ : / , #"
     HEIGHT = int(args.height or "10")
 
 
@@ -40,7 +40,7 @@ def get_words() -> typing.List[str]:
         words2.update(pattern2.split(word))
     # words3
     delimiters = set(
-        re.escape(word_delimiter) for word_delimiter in re.split(r"\s+", DELIMITERS)
+        re.escape(str(delimiter)) for delimiter in re.split(r"\s+", DELIMITERS)
     )
     words3 = set()
     for n in range(0, len(delimiters) + 1):

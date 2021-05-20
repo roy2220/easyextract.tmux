@@ -7,6 +7,7 @@ import shlex
 import subprocess
 import sys
 import tempfile
+import shutil
 
 
 def main() -> None:
@@ -63,6 +64,8 @@ def check_requirements() -> None:
     tmux_version = float(re.compile(r"^tmux (\d+\.\d+)").match(result).group(1))
     if tmux_version < 3.1:
         raise Exception("tmux version >= 3.1 required")
+    if shutil.which("fzf") is None:
+        raise Exception("fzf not found")
 
 
 def get_option(option_name: str) -> str:

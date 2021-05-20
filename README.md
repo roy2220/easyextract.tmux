@@ -6,6 +6,7 @@
 
 - Tmux >= 3.1
 - Python >= 3.8
+- Bash
 - [FZF](https://github.com/junegunn/fzf)
 
 ## Installation
