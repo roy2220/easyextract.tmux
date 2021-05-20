@@ -23,7 +23,7 @@ def parse_args() -> None:
 
     global DELIMITERS, HEIGHT
     DELIMITERS = args.delimiters or "- . @ : / , #"
-    HEIGHT = int(args.height or "10")
+    HEIGHT = float(args.height or "10")
 
 
 parse_args()
@@ -61,7 +61,7 @@ def get_words() -> typing.List[str]:
 
 def select_and_send_word(words: typing.List[str]) -> None:
     script_file_name = _generate_script_file(words)
-    _run_tmux_command(
+    args = [
         "set-window-option",
         "synchronize-panes",
         "off",
@@ -71,11 +71,13 @@ def select_and_send_word(words: typing.List[str]) -> None:
         "off",
         ";",
         "split-window",
-        "-l",
-        str(HEIGHT),
-        "bash",
-        script_file_name,
-    )
+    ]
+    if HEIGHT < 1:
+        args.extend(("-p", str(int(100 * HEIGHT))))
+    else:
+        args.extend(("-l", str(int(HEIGHT))))
+    args.extend(("bash", script_file_name))
+    _run_tmux_command(*args)
 
 
 def _generate_script_file(words: typing.List[str]) -> str:
