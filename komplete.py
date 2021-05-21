@@ -29,9 +29,9 @@ def parse_args() -> None:
 parse_args()
 
 
-def get_words() -> typing.List[str]:
+def get_words() -> typing.Tuple[typing.List[str], typing.Dict[str, str]]:
+    screen, tmux_vars = _capture_screen()
     # words1
-    screen = _run_tmux_command("capture-pane", "-p")
     words1 = set(screen.split("\n"))
     # words2
     pattern2 = re.compile(r"\s+")
@@ -56,11 +56,30 @@ def get_words() -> typing.List[str]:
     # words5
     words5 = words1.union(words2).union(words3).union(words4)
     words5.remove("")
-    return list(words5)
+    return list(words5), tmux_vars
 
 
-def select_and_send_word(words: typing.List[str]) -> None:
-    script_file_name = _generate_script_file(words)
+def _capture_screen() -> typing.Tuple[str, typing.Dict[str, str]]:
+    tmux_vars = _get_tmux_vars(
+        "pane_id", "pane_height", "scroll_position", "history_size"
+    )
+    pane_id = tmux_vars["pane_id"]
+    args = ["capture-pane", "-t", pane_id]
+    scroll_position = tmux_vars["scroll_position"]
+    if scroll_position != "":
+        start_line_number = -int(scroll_position)
+        pane_height = int(tmux_vars["pane_height"])
+        end_line_number = start_line_number + pane_height - 1
+        args += ["-S", str(start_line_number), "-E", str(end_line_number)]
+    args += ["-p"]
+    screen = _run_tmux_command(*args)
+    return screen, tmux_vars
+
+
+def select_and_send_word(
+    words: typing.List[str], tmux_vars: typing.Dict[str, str]
+) -> None:
+    pane_id = tmux_vars["pane_id"]
     args = [
         "set-window-option",
         "synchronize-panes",
@@ -71,31 +90,51 @@ def select_and_send_word(words: typing.List[str]) -> None:
         "off",
         ";",
         "split-window",
+        "-t",
+        pane_id,
     ]
     if HEIGHT < 1:
         args.extend(("-p", str(int(100 * HEIGHT))))
     else:
         args.extend(("-l", str(int(HEIGHT))))
+    script_file_name = _generate_script_file(words, tmux_vars)
     args.extend(("bash", script_file_name))
     _run_tmux_command(*args)
 
 
-def _generate_script_file(words: typing.List[str]) -> str:
+def _generate_script_file(
+    words: typing.List[str], tmux_vars: typing.Dict[str, str]
+) -> str:
+    pane_id = tmux_vars["pane_id"]
+    scroll_position = tmux_vars["scroll_position"]
+    history_size = tmux_vars["history_size"]
     fzf_default_opts = os.environ.get("FZF_DEFAULT_OPTS", "")
     fzf_default_command = os.environ.get("FZF_DEFAULT_COMMAND", "")
-    pane_id = _get_tmux_vars("pane_id")["pane_id"]
-    script = """
+    in_copy_mode = scroll_position != ""
+    script = """\
 trap 'rm "${{0}}"' EXIT
+[[ -z {in_copy_mode} ]] && tmux copy-mode -t {pane_id}
+HISTORY_SIZE=$(tmux display-message -t {pane_id} -p '#{{history_size}}')
+HISTORY_SIZE_DELTA=$((${{HISTORY_SIZE}} - {history_size}))
+[[ ${{HISTORY_SIZE_DELTA}} -ne 0 ]] && tmux send-keys -t {pane_id} -X goto-line "$(({scroll_position} + ${{HISTORY_SIZE_DELTA}}))"
 WORD=$(FZF_DEFAULT_OPTS={fzf_default_opts} FZF_DEFAULT_COMMAND={fzf_default_command} fzf --no-height --bind=ctrl-z:ignore <<< {words})
 if [[ -z ${{WORD}} ]]; then
+    if [[ -z {in_copy_mode} ]]; then
+        tmux send-keys -t {pane_id} -X cancel
+    else
+        [[ ${{HISTORY_SIZE_DELTA}} -ne 0 ]] && tmux send-keys -t {pane_id} -X goto-line {scroll_position}
+    fi
     exit
 fi
-tmux send-keys -t {pane_id} -l -- "${{WORD}}"
+tmux send-keys -t {pane_id} -X cancel\\; send-keys -t {pane_id} -l -- "${{WORD}}"
 """.format(
+        pane_id=shlex.quote(pane_id),
+        scroll_position=shlex.quote(scroll_position or "0"),
+        history_size=shlex.quote(history_size),
         fzf_default_opts=shlex.quote(fzf_default_opts),
         fzf_default_command=shlex.quote(fzf_default_command),
         words=shlex.quote("\n".join(words)),
-        pane_id=shlex.quote(pane_id),
+        in_copy_mode=shlex.quote("1" if in_copy_mode else ""),
     )
     script_file_name = tempfile.mktemp()
     with open(script_file_name, "w") as f:
@@ -119,8 +158,8 @@ def _run_tmux_command(*args: str) -> str:
 
 
 def main() -> None:
-    words = get_words()
-    select_and_send_word(words)
+    words, tmux_vars = get_words()
+    select_and_send_word(words, tmux_vars)
 
 
 main()

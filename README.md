@@ -44,6 +44,8 @@
 ## Usage
 
 - Press `prefix` + <kbd>k</kbd> to extract a word from the screen.
+- Press <kbd>Ctrl</kbd> + <kbd>k</kbd> to extract a word from the screen in `copy mode`.
+- Press <kbd>Escape</kbd> to quit.
 
 ## Configuration
 
@@ -51,6 +53,6 @@ defaults:
 
 ```tmux
 set-option -g @komplete-key-binding "k"
-set-option -g @komplete-delimiters "- . @ : / ,"
+set-option -g @komplete-delimiters "- . @ : / , #"
 set-option -g @komplete-height "10"
 ```
