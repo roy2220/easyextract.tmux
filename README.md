@@ -4,7 +4,7 @@
 
 ## Requirements
 
-- Tmux >= 3.1
+- Tmux >= 3.0
 - Python >= 3.8
 - Bash
 - [FZF](https://github.com/junegunn/fzf)
