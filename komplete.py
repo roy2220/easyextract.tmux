@@ -32,7 +32,7 @@ parse_args()
 def get_words() -> typing.Tuple[typing.List[str], typing.Dict[str, str]]:
     screen, tmux_vars = _capture_screen()
     # words1
-    words1 = set(screen.split("\n"))
+    words1 = set(screen.splitlines())
     # words2
     pattern2 = re.compile(r"\s+")
     words2 = set()
@@ -70,8 +70,13 @@ def _capture_screen() -> typing.Tuple[str, typing.Dict[str, str]]:
         start_line_number = -int(scroll_position)
         pane_height = int(tmux_vars["pane_height"])
         end_line_number = start_line_number + pane_height - 1
-        args += ["-S", str(start_line_number), "-E", str(end_line_number)]
-    args += ["-p"]
+        args.extend(("-S", str(start_line_number), "-E", str(end_line_number)))
+    args.append("-p")
+    pane_ids = _run_tmux_command("list-panes", "-F", "#{pane_id}").splitlines()
+    for pane_id2 in pane_ids:
+        if pane_id2 == pane_id:
+            continue
+        args.extend((";", "capture-pane", "-t", pane_id, "-p"))
     screen = _run_tmux_command(*args)
     return screen, tmux_vars
 
