@@ -76,7 +76,7 @@ def _capture_screen() -> typing.Tuple[str, typing.Dict[str, str]]:
     for pane_id2 in pane_ids:
         if pane_id2 == pane_id:
             continue
-        args.extend((";", "capture-pane", "-t", pane_id, "-p"))
+        args.extend((";", "capture-pane", "-t", pane_id2, "-p"))
     screen = _run_tmux_command(*args)
     return screen, tmux_vars
 
