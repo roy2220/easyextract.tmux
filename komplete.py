@@ -55,7 +55,7 @@ def get_words() -> typing.Tuple[typing.List[str], typing.Dict[str, str]]:
         words4.update(pattern4.findall(word))
     # words5
     words5 = words1.union(words2).union(words3).union(words4)
-    words5.remove("")
+    words5.discard("")
     return list(words5), tmux_vars
 
 
