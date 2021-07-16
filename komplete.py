@@ -31,8 +31,22 @@ parse_args()
 
 def get_words() -> typing.Tuple[typing.List[str], typing.Dict[str, str]]:
     screen, tmux_vars = _capture_screen()
-    # words1
-    words1 = set(screen.splitlines())
+    # words0
+    words0 = set(screen.splitlines())
+    words1 = set(words0)
+    for raw_pattern in (
+        r'"((?:\\"|[^"])*)"',
+        r"'((?:\\'|[^'])*)'",
+        r"<((?:\\<|\\>|[^<>])*)>",
+        r"\[((?:\\\[|\\\]|[^\[\]])*)\]",
+        r"\{((?:\\\{|\\\}|[^\{\}])*)\}",
+        r"\(((?:\\\(|\\\)|[^\(\)])*)\)",
+    ):
+        pattern1 = re.compile(raw_pattern)
+        for word in words0:
+            for match in pattern1.finditer(word):
+                words1.add(match.group())
+                words1.add(match.groups()[0])
     # words2
     pattern2 = re.compile(r"\s+")
     words2 = set()
