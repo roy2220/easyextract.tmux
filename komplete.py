@@ -29,8 +29,17 @@ def parse_args() -> None:
 parse_args()
 
 
-def get_words() -> typing.Tuple[typing.List[str], typing.Dict[str, str]]:
-    screen, tmux_vars = _capture_screen()
+def get_tmux_vars(*tmux_var_names: str) -> typing.Dict[str, str]:
+    result = _run_tmux_command(
+        "display-message", "-p", "\n".join("#{%s}" % s for s in tmux_var_names)
+    )
+    tmux_var_values = result.split("\n")
+    tmux_vars = dict(zip(tmux_var_names, tmux_var_values))
+    return tmux_vars
+
+
+def get_words(tmux_vars: typing.Dict[str, str]) -> typing.List[str]:
+    screen = _capture_screen(tmux_vars)
     # words0
     words0 = set(screen.splitlines())
     words1 = set(words0)
@@ -70,13 +79,10 @@ def get_words() -> typing.Tuple[typing.List[str], typing.Dict[str, str]]:
     # words5
     words5 = words1.union(words2).union(words3).union(words4)
     words5.discard("")
-    return list(words5), tmux_vars
+    return list(words5)
 
 
-def _capture_screen() -> typing.Tuple[str, typing.Dict[str, str]]:
-    tmux_vars = _get_tmux_vars(
-        "pane_id", "pane_height", "scroll_position", "history_size"
-    )
+def _capture_screen(tmux_vars: typing.Dict[str, str]) -> str:
     pane_id = tmux_vars["pane_id"]
     args = ["capture-pane", "-t", pane_id]
     scroll_position = tmux_vars["scroll_position"]
@@ -92,38 +98,48 @@ def _capture_screen() -> typing.Tuple[str, typing.Dict[str, str]]:
             continue
         args.extend((";", "capture-pane", "-t", pane_id2, "-p"))
     screen = _run_tmux_command(*args)
-    return screen, tmux_vars
+    return screen
 
 
 def select_and_send_word(
     words: typing.List[str], tmux_vars: typing.Dict[str, str]
 ) -> None:
-    pane_id = tmux_vars["pane_id"]
-    args = [
-        "set-window-option",
-        "synchronize-panes",
-        "off",
-        ";",
-        "set-window-option",
-        "remain-on-exit",
-        "off",
-        ";",
-        "split-window",
-        "-t",
-        pane_id,
-    ]
-    if HEIGHT < 1:
-        args.extend(("-p", str(int(100 * HEIGHT))))
+    match = re.match(r"^(\d+).(\d+)", tmux_vars["version"])
+    version = int(match.group(1)), int(match.group(2))
+    if version < (3, 2):
+        pane_id = tmux_vars["pane_id"]
+        args = [
+            "set-window-option",
+            "synchronize-panes",
+            "off",
+            ";",
+            "set-window-option",
+            "remain-on-exit",
+            "off",
+            ";",
+            "split-window",
+            "-t",
+            pane_id,
+        ]
+        if HEIGHT < 1:
+            args.extend(("-p", str(int(100 * HEIGHT))))
+        else:
+            args.extend(("-l", str(int(HEIGHT))))
+        script = _generate_script(words, tmux_vars)
     else:
-        args.extend(("-l", str(int(HEIGHT))))
-    script_file_name = _generate_script_file(words, tmux_vars)
+        args = [
+            "display-popup",
+            "-E",
+        ]
+        script = _generate_script_2(words, tmux_vars)
+    script_file_name = tempfile.mktemp()
+    with open(script_file_name, "w") as f:
+        f.write(script)
     args.extend(("bash", script_file_name))
     _run_tmux_command(*args)
 
 
-def _generate_script_file(
-    words: typing.List[str], tmux_vars: typing.Dict[str, str]
-) -> str:
+def _generate_script(words: typing.List[str], tmux_vars: typing.Dict[str, str]) -> str:
     pane_id = tmux_vars["pane_id"]
     scroll_position = tmux_vars["scroll_position"]
     history_size = tmux_vars["history_size"]
@@ -155,19 +171,36 @@ tmux send-keys -t {pane_id} -X cancel\\; send-keys -t {pane_id} -l -- "${{WORD}}
         words=shlex.quote("\n".join(words)),
         in_copy_mode=shlex.quote("1" if in_copy_mode else ""),
     )
-    script_file_name = tempfile.mktemp()
-    with open(script_file_name, "w") as f:
-        f.write(script)
-    return script_file_name
+    return script
 
 
-def _get_tmux_vars(*tmux_var_names: str) -> typing.Dict[str, str]:
-    result = _run_tmux_command(
-        "display-message", "-p", "\n".join("#{%s}" % s for s in tmux_var_names)
+def _generate_script_2(
+    words: typing.List[str], tmux_vars: typing.Dict[str, str]
+) -> str:
+    pane_id = tmux_vars["pane_id"]
+    scroll_position = tmux_vars["scroll_position"]
+    fzf_default_opts = os.environ.get("FZF_DEFAULT_OPTS", "")
+    fzf_default_command = os.environ.get("FZF_DEFAULT_COMMAND", "")
+    in_copy_mode = scroll_position != ""
+    script = """\
+trap 'rm "${{0}}"' EXIT
+WORD=$(FZF_DEFAULT_OPTS={fzf_default_opts} FZF_DEFAULT_COMMAND={fzf_default_command} fzf --no-height --bind=ctrl-z:ignore <<< {words})
+if [[ -z ${{WORD}} ]]; then
+    exit
+fi
+if [[ -z {in_copy_mode} ]]; then
+    tmux send-keys -t {pane_id} -l -- "${{WORD}}"
+else
+    tmux send-keys -t {pane_id} -X cancel\\; send-keys -t {pane_id} -l -- "${{WORD}}"
+fi
+""".format(
+        pane_id=shlex.quote(pane_id),
+        fzf_default_opts=shlex.quote(fzf_default_opts),
+        fzf_default_command=shlex.quote(fzf_default_command),
+        words=shlex.quote("\n".join(words)),
+        in_copy_mode=shlex.quote("1" if in_copy_mode else ""),
     )
-    tmux_var_values = result.split("\n")
-    tmux_vars = dict(zip(tmux_var_names, tmux_var_values))
-    return tmux_vars
+    return script
 
 
 def _run_tmux_command(*args: str) -> str:
@@ -177,7 +210,14 @@ def _run_tmux_command(*args: str) -> str:
 
 
 def main() -> None:
-    words, tmux_vars = get_words()
+    tmux_vars = get_tmux_vars(
+        "pane_id",
+        "pane_height",
+        "scroll_position",
+        "history_size",
+        "version",
+    )
+    words = get_words(tmux_vars)
     select_and_send_word(words, tmux_vars)
 
 
