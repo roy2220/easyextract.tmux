@@ -54,5 +54,6 @@ defaults:
 ```tmux
 set-option -g @komplete-key-binding "k"
 set-option -g @komplete-delimiters "- . @ : / , #"
-set-option -g @komplete-height "0.2"
+set-option -g @komplete-width "0.62"
+set-option -g @komplete-height "10"
 ```

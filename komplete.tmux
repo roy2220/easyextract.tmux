@@ -16,6 +16,7 @@ def main() -> None:
     fzf_default_opts = os.environ.get("FZF_DEFAULT_OPTS", "")
     fzf_default_command = os.environ.get("FZF_DEFAULT_COMMAND", "")
     delimiters = get_option("@komplete-delimiters")
+    width = get_option("@komplete-width")
     height = get_option("@komplete-height")
     dir_name = os.path.dirname(os.path.abspath(__file__))
     script_file_name = os.path.join(dir_name, "komplete.py")
@@ -35,6 +36,7 @@ def main() -> None:
                 sys.executable,
                 script_file_name,
                 "--delimiters", delimiters,
+                "--width", width,
                 "--height", height,
             ]
         )
