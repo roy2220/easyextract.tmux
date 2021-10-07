@@ -1,6 +1,6 @@
-# komplete.tmux
+# easyextract.tmux
 
-`komplete.tmux` extracts words from the screen
+`easyextract.tmux` extracts words from the screen
 
 ## Requirements
 
@@ -16,7 +16,7 @@
   1. Add to `~/.tmux.conf`:
 
      ```tmux
-     set-option -g @plugin "roy2220/komplete.tmux"
+     set-option -g @plugin "roy2220/easyextract.tmux"
      ```
 
   2. Press `prefix` + <kbd>I</kbd> to install the plugin.
@@ -26,13 +26,13 @@
   1. Fetch the source:
 
      ```sh
-     git clone https://github.com/roy2220/komplete.tmux.git /PATH/TO/DIR
+     git clone https://github.com/roy2220/easyextract.tmux.git /PATH/TO/DIR
      ```
 
   2. Add to `~/.tmux.conf`:
 
      ```tmux
-     run-shell "/PATH/TO/DIR/komplete.tmux"
+     run-shell "/PATH/TO/DIR/easyextract.tmux"
      ```
 
   3. Reload Tmux configuration:
@@ -43,8 +43,8 @@
 
 ## Usage
 
-- Press `prefix` + <kbd>k</kbd> to extract a word from the screen.
-- Press <kbd>Ctrl</kbd> + <kbd>k</kbd> to extract a word from the screen in `copy mode`.
+- Press `prefix` + <kbd>e</kbd> to extract a word from the screen.
+- Press <kbd>Ctrl</kbd> + <kbd>e</kbd> to extract a word from the screen in `copy mode`.
 - Press <kbd>Escape</kbd> to quit.
 
 ## Configuration
@@ -52,8 +52,8 @@
 defaults:
 
 ```tmux
-set-option -g @komplete-key-binding "k"
-set-option -g @komplete-delimiters "- . @ : / , #"
-set-option -g @komplete-width "0.62"
-set-option -g @komplete-height "10"
+set-option -g @easyextract-key-binding "e"
+set-option -g @easyextract-delimiters "- . @ : / , #"
+set-option -g @easyextract-width "0.62"
+set-option -g @easyextract-height "10"
 ```
