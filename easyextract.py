@@ -25,7 +25,7 @@ def parse_args() -> None:
 
     global DELIMITERS, WIDTH, HEIGHT
     DELIMITERS = args.delimiters or "- . @ : / , #"
-    WIDTH = float(args.width or "0.62")
+    WIDTH = float(args.width or "0.38")
     HEIGHT = float(args.height or "10")
 
 
@@ -134,6 +134,7 @@ def select_and_send_word(
         args = [
             "display-popup",
             "-E",
+            "-B",
         ]
         args.append("-w")
         if WIDTH < 1:
@@ -166,7 +167,7 @@ trap 'rm "${{0}}"' EXIT
 HISTORY_SIZE=$(tmux display-message -t {pane_id} -p '#{{history_size}}')
 HISTORY_SIZE_DELTA=$((${{HISTORY_SIZE}} - {history_size}))
 [[ ${{HISTORY_SIZE_DELTA}} -ne 0 ]] && tmux send-keys -t {pane_id} -X goto-line "$(({scroll_position} + ${{HISTORY_SIZE_DELTA}}))"
-WORD=$(FZF_DEFAULT_OPTS={fzf_default_opts} FZF_DEFAULT_COMMAND={fzf_default_command} fzf --prompt='Word> ' --no-height --bind=ctrl-z:ignore <<< {words})
+WORD=$(FZF_DEFAULT_OPTS={fzf_default_opts} FZF_DEFAULT_COMMAND={fzf_default_command} fzf --prompt='Word> ' --no-height --border=rounded --bind=ctrl-z:ignore <<< {words})
 if [[ -z ${{WORD}} ]]; then
     if [[ -z {in_copy_mode} ]]; then
         tmux send-keys -t {pane_id} -X cancel
@@ -198,7 +199,7 @@ def _generate_script_2(
     in_copy_mode = scroll_position != ""
     script = """\
 trap 'rm "${{0}}"' EXIT
-WORD=$(FZF_DEFAULT_OPTS={fzf_default_opts} FZF_DEFAULT_COMMAND={fzf_default_command} fzf --prompt='Word> ' --no-height --bind=ctrl-z:ignore <<< {words})
+WORD=$(FZF_DEFAULT_OPTS={fzf_default_opts} FZF_DEFAULT_COMMAND={fzf_default_command} fzf --prompt='Word> ' --no-height --border=rounded --bind=ctrl-z:ignore <<< {words})
 if [[ -z ${{WORD}} ]]; then
     exit
 fi
