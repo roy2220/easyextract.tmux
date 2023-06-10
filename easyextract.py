@@ -26,7 +26,7 @@ def parse_args() -> None:
     global DELIMITERS, WIDTH, HEIGHT
     DELIMITERS = args.delimiters or "- . @ : / , #"
     WIDTH = float(args.width or "0.38")
-    HEIGHT = float(args.height or "10")
+    HEIGHT = float(args.height or "0.38")
 
 
 parse_args()

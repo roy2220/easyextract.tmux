@@ -54,6 +54,6 @@ defaults:
 ```tmux
 set-option -g @easyextract-key-binding "e"
 set-option -g @easyextract-delimiters "- . @ : / , #"
-set-option -g @easyextract-width "0.62"
-set-option -g @easyextract-height "10"
+set-option -g @easyextract-width "0.38"
+set-option -g @easyextract-height "0.38"
 ```
