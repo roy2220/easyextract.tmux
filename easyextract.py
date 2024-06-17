@@ -107,9 +107,9 @@ def _capture_screen(tmux_vars: typing.Dict[str, str]) -> str:
 def select_and_send_word(
     words: typing.List[str], tmux_vars: typing.Dict[str, str]
 ) -> None:
-    match = re.match(r"^(\d+).(\d+)", tmux_vars["version"])
+    match = re.match(r"^(next-)?(\d+).(\d+)", tmux_vars["version"])
     assert match is not None
-    version = int(match.group(1)), int(match.group(2))
+    version = int(match.group(2)), int(match.group(3))
     if version < (3, 2):
         pane_id = tmux_vars["pane_id"]
         args = [

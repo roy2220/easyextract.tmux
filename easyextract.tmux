@@ -4,10 +4,10 @@ import os
 import platform
 import re
 import shlex
+import shutil
 import subprocess
 import sys
 import tempfile
-import shutil
 
 
 def main() -> None:
@@ -30,14 +30,16 @@ def main() -> None:
         key_binding,
         "run-shell",
         "-b",
-        "FZF_DEFAULT_OPTS={} FZF_DEFAULT_COMMAND={} ".format(shlex.quote(fzf_default_opts), shlex.quote(fzf_default_command))
+        "FZF_DEFAULT_OPTS={} FZF_DEFAULT_COMMAND={} ".format(
+            shlex.quote(fzf_default_opts), shlex.quote(fzf_default_command)
+        )
         + shlex.join(
             [
                 sys.executable,
                 script_file_name,
-                "--delimiters", delimiters,
-                "--width", width,
-                "--height", height,
+                "--delimiters=" + delimiters,
+                "--width=" + width,
+                "--height=" + height,
             ]
         )
         + " >>{} 2>&1 || true".format(shlex.quote(log_file_name)),
@@ -46,12 +48,12 @@ def main() -> None:
         args, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
     )
     args2 = args[:]
-    args2[2:3] = ['-T', 'copy-mode', 'C-' + key_binding]
+    args2[2:3] = ["-T", "copy-mode", "C-" + key_binding]
     subprocess.run(
         args2, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
     )
     args3 = args[:]
-    args3[2:3] = ['-T', 'copy-mode-vi', 'C-' + key_binding]
+    args3[2:3] = ["-T", "copy-mode-vi", "C-" + key_binding]
     subprocess.run(
         args3, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
     )
@@ -59,11 +61,11 @@ def main() -> None:
 
 def check_requirements() -> None:
     python_version = platform.python_version_tuple()
-    if (int(python_version[0]), int(python_version[1])) < (3,8):
+    if (int(python_version[0]), int(python_version[1])) < (3, 8):
         raise Exception("python version >= 3.8 required")
     proc = subprocess.run(("tmux", "-V"), check=True, capture_output=True)
     result = proc.stdout.decode()[:-1]
-    tmux_version = float(re.compile(r"^tmux (\d+\.\d+)").match(result).group(1))
+    tmux_version = float(re.compile(r"^tmux (next-)?(\d+\.\d+)").match(result).group(2))
     if tmux_version < 3.0:
         raise Exception("tmux version >= 3.0 required")
     if shutil.which("fzf") is None:
